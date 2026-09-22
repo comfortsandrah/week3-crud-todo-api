@@ -1,0 +1,12 @@
+$kind: http-request
+description: ""
+url: http://localhost:3002/todos/completed
+method: GET
+body:
+  type: json
+  content: |-
+    {
+        "task": "Learn Postman",
+        "completed": true
+    }
+order: 1790116231694

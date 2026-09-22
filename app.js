@@ -12,9 +12,40 @@ app.get('/todos', (req, res) => {
   res.status(200).json(todos); // Send array as JSON
 });
 
+app.get('/todos/completed', (req, res) => {
+  const completed = todos.filter((t) => t.completed);
+  if (completed.length === 0) {
+    return res.status(404).json({ message: "No completed tasks" });
+  }
+  res.status(200).json(completed); // Custom Read!
+});
+
+app.get("/todos/active", (req, res) => {
+  const active = todos.filter((t) => !t.completed);
+  if (active.length === 0) {
+    return res.status(404).json({ message: "No active tasks" });
+  }
+  res.json(active);
+})
+
+// Get specific task
+app.get('/todos/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const todo = todos.find((t) => t.id === id);
+  if (!todo) return res.status(404).json({ message: 'Not Found' });
+  res.status(200).json(todo);
+})
+
 // POST New – Create
 app.post('/todos', (req, res) => {
-  const newTodo = { id: todos.length + 1, ...req.body }; // Auto-ID
+  //validation POST requires "task" field
+  const { task, completed } = req.body;
+  if (!task) {
+    return res.status(400).json({ message: "Task is required" });
+  }
+  let nextId = Math.max(...todos.map(t => t.id)) + 1;
+  //create new todo
+  const newTodo = { id: nextId, task, completed: completed ?? false }; // Auto-ID
   todos.push(newTodo);
   res.status(201).json(newTodo); // Echo back
 });
@@ -23,7 +54,11 @@ app.post('/todos', (req, res) => {
 app.patch('/todos/:id', (req, res) => {
   const todo = todos.find((t) => t.id === parseInt(req.params.id)); // Array.find()
   if (!todo) return res.status(404).json({ message: 'Todo not found' });
-  Object.assign(todo, req.body); // Merge: e.g., {completed: true}
+
+  // only update if the fields are present
+  const { task, completed } = req.body;
+  if (task) todo.task = task;
+  if (completed !== undefined) todo.completed = completed;
   res.status(200).json(todo);
 });
 
@@ -37,12 +72,9 @@ app.delete('/todos/:id', (req, res) => {
   res.status(204).send(); // Silent success
 });
 
-app.get('/todos/completed', (req, res) => {
-  const completed = todos.filter((t) => t.completed);
-  res.json(completed); // Custom Read!
-});
-
 app.use((err, req, res, next) => {
+  console.error(err.stack);
+
   res.status(500).json({ error: 'Server error!' });
 });
 
